@@ -1,0 +1,23 @@
+{
+  "validChild": {
+    "name": "Ana Lima",
+    "birthDate": "2021-04-18",
+    "weightKg": 18.5
+  },
+  "invalidChild": {
+    "name": "",
+    "birthDate": "2035-01-01",
+    "weightKg": 0
+  },
+  "missingRequiredChild": {},
+  "futureBirthDateChild": {
+    "name": "Ana Lima",
+    "birthDate": "2027-01-01",
+    "weightKg": 18.5
+  },
+  "invalidWeightChild": {
+    "name": "Ana Lima",
+    "birthDate": "2021-04-18",
+    "weightKg": 0
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "validMedication": {
+    "name": "Amoxicilina",
+    "doseTime": "08:00",
+    "doseQuantity": 2
+  },
+  "invalidDoseTimeMedication": {
+    "name": "Amoxicilina",
+    "doseTime": "25:99",
+    "doseQuantity": 2
+  },
+  "invalidDoseQuantityMedication": {
+    "name": "Amoxicilina",
+    "doseTime": "08:00",
+    "doseQuantity": 0
+  }
+}

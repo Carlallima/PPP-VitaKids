@@ -1,0 +1,13 @@
+{
+  "validExam": {
+    "type": "Hemograma",
+    "performedAt": "2026-04-30",
+    "result": "Sem alteracoes relevantes."
+  },
+  "missingRequiredExam": {},
+  "futurePerformedAtExam": {
+    "type": "Hemograma",
+    "performedAt": "2027-01-01",
+    "result": "Sem alteracoes relevantes."
+  }
+}

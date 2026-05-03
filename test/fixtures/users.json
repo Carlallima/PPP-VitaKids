@@ -1,0 +1,25 @@
+{
+  "validUser": {
+    "name": "Carla Lima",
+    "email": "carla@example.com",
+    "password": "Senha@123"
+  },
+  "secondUser": {
+    "name": "Mariana Souza",
+    "email": "mariana@example.com",
+    "password": "Senha@456"
+  },
+  "invalidRegister": {
+    "name": "",
+    "email": "email-invalido",
+    "password": "curta"
+  },
+  "invalidLogin": {
+    "email": "carla@example.com",
+    "password": "senha-errada"
+  },
+  "invalidLoginPayload": {
+    "email": "email-invalido",
+    "password": ""
+  }
+}

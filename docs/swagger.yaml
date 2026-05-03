@@ -1,0 +1,755 @@
+openapi: 3.0.3
+info:
+  title: VitaKids API
+  version: 1.0.0
+  description: >
+    API REST do MVP VitaKids para cadastro e login de responsaveis,
+    cadastro e consulta de criancas, medicamentos e exames.
+    Especificacao derivada do epico Jira VK-1 e tarefas VK-2 a VK-9.
+  license:
+    name: Proprietary
+    url: https://vitakids.local/license
+servers:
+  - url: /api/v1
+    description: Caminho base da API
+tags:
+  - name: Autenticacao
+    description: Cadastro e login de responsaveis.
+  - name: Criancas
+    description: Cadastro e visualizacao de criancas vinculadas ao responsavel autenticado.
+  - name: Medicamentos
+    description: Cadastro e visualizacao de medicamentos vinculados a crianca.
+  - name: Exames
+    description: Cadastro e visualizacao de exames vinculados a crianca.
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Autenticacao
+      summary: Cadastra um responsavel
+      description: >
+        Permite que um responsavel crie uma conta informando nome,
+        e-mail e senha.
+      operationId: registerUser
+      x-jira-issue: VK-2
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+            examples:
+              responsavel:
+                value:
+                  name: Carla Lima
+                  email: carla@example.com
+                  password: Senha@123
+      responses:
+        "201":
+          description: Usuario cadastrado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUserResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: E-mail ja cadastrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: EMAIL_ALREADY_EXISTS
+                message: E-mail ja cadastrado.
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /auth/login:
+    post:
+      tags:
+        - Autenticacao
+      summary: Autentica um responsavel
+      description: >
+        Valida e-mail e senha e retorna um token de acesso para uso
+        nos endpoints protegidos.
+      operationId: loginUser
+      x-jira-issue: VK-3
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+            examples:
+              responsavel:
+                value:
+                  email: carla@example.com
+                  password: Senha@123
+      responses:
+        "200":
+          description: Login realizado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthLoginResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: E-mail ou senha incorretos.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: INVALID_CREDENTIALS
+                message: E-mail ou senha incorretos.
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /children:
+    get:
+      tags:
+        - Criancas
+      summary: Lista as criancas do responsavel autenticado
+      description: >
+        Retorna somente as criancas vinculadas a conta do responsavel
+        autenticado. Quando nao houver registros, retorna uma lista vazia.
+      operationId: listChildren
+      x-jira-issue: VK-5
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Lista de criancas vinculadas ao responsavel.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChildrenListResponse"
+              examples:
+                comRegistros:
+                  value:
+                    data:
+                      - id: 7f37d6e8-9e82-4fd7-99da-090b4f8e1ca6
+                        name: Ana Lima
+                        birthDate: "2021-04-18"
+                        weightKg: 18.5
+                        createdAt: "2026-05-02T22:50:00Z"
+                        updatedAt: "2026-05-02T22:50:00Z"
+                vazio:
+                  value:
+                    data: []
+                    message: Nenhuma crianca cadastrada foi encontrada.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - Criancas
+      summary: Cadastra uma crianca
+      description: >
+        Cadastra nome, data de nascimento e peso da crianca, vinculando
+        o registro ao responsavel autenticado.
+      operationId: createChild
+      x-jira-issue: VK-4
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateChildRequest"
+            examples:
+              crianca:
+                value:
+                  name: Ana Lima
+                  birthDate: "2021-04-18"
+                  weightKg: 18.5
+      responses:
+        "201":
+          description: Crianca cadastrada com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChildResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /children/{childId}:
+    get:
+      tags:
+        - Criancas
+      summary: Consulta uma crianca
+      description: >
+        Retorna os dados de uma crianca especifica vinculada ao responsavel
+        autenticado.
+      operationId: getChild
+      x-jira-issue: VK-5
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ChildId"
+      responses:
+        "200":
+          description: Dados da crianca.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChildResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /children/{childId}/medications:
+    get:
+      tags:
+        - Medicamentos
+      summary: Lista medicamentos da crianca
+      description: >
+        Retorna os medicamentos vinculados a uma crianca do responsavel
+        autenticado. Quando nao houver registros, retorna uma lista vazia.
+      operationId: listMedications
+      x-jira-issue: VK-7
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ChildId"
+      responses:
+        "200":
+          description: Lista de medicamentos da crianca.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MedicationsListResponse"
+              examples:
+                comRegistros:
+                  value:
+                    data:
+                      - id: 5a820d6f-777d-4a99-9a01-8b8d03fbb0bb
+                        childId: 7f37d6e8-9e82-4fd7-99da-090b4f8e1ca6
+                        name: Amoxicilina
+                        doseTime: "08:00"
+                        doseQuantity: 2
+                        createdAt: "2026-05-02T22:50:00Z"
+                        updatedAt: "2026-05-02T22:50:00Z"
+                vazio:
+                  value:
+                    data: []
+                    message: Nenhum medicamento foi encontrado.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags:
+        - Medicamentos
+      summary: Cadastra um medicamento para a crianca
+      description: >
+        Cadastra nome do medicamento, horario da dose e quantidade de doses,
+        vinculando o medicamento a crianca selecionada.
+      operationId: createMedication
+      x-jira-issue: VK-6
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ChildId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMedicationRequest"
+            examples:
+              medicamento:
+                value:
+                  name: Amoxicilina
+                  doseTime: "08:00"
+                  doseQuantity: 2
+      responses:
+        "201":
+          description: Medicamento cadastrado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MedicationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /children/{childId}/exams:
+    get:
+      tags:
+        - Exames
+      summary: Lista exames da crianca
+      description: >
+        Retorna os exames vinculados a uma crianca do responsavel autenticado.
+        Quando nao houver registros, retorna uma lista vazia.
+      operationId: listExams
+      x-jira-issue: VK-9
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ChildId"
+      responses:
+        "200":
+          description: Lista de exames da crianca.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamsListResponse"
+              examples:
+                comRegistros:
+                  value:
+                    data:
+                      - id: edb6b92d-7c39-473d-9070-bd4cf08d795e
+                        childId: 7f37d6e8-9e82-4fd7-99da-090b4f8e1ca6
+                        type: Hemograma
+                        performedAt: "2026-04-30"
+                        result: Sem alteracoes relevantes.
+                        createdAt: "2026-05-02T22:50:00Z"
+                        updatedAt: "2026-05-02T22:50:00Z"
+                vazio:
+                  value:
+                    data: []
+                    message: Nenhum exame foi encontrado.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags:
+        - Exames
+      summary: Cadastra um exame para a crianca
+      description: >
+        Cadastra tipo de exame, data de realizacao e resultado, vinculando
+        o exame a crianca selecionada.
+      operationId: createExam
+      x-jira-issue: VK-8
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ChildId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExamRequest"
+            examples:
+              exame:
+                value:
+                  type: Hemograma
+                  performedAt: "2026-04-30"
+                  result: Sem alteracoes relevantes.
+      responses:
+        "201":
+          description: Exame cadastrado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    ChildId:
+      name: childId
+      in: path
+      required: true
+      description: Identificador da crianca.
+      schema:
+        type: string
+        format: uuid
+  responses:
+    BadRequest:
+      description: Requisicao invalida.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: BAD_REQUEST
+            message: Requisicao invalida.
+    Unauthorized:
+      description: Token ausente, invalido ou expirado.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: UNAUTHORIZED
+            message: Autenticacao obrigatoria.
+    Forbidden:
+      description: Recurso nao pertence ao responsavel autenticado.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: FORBIDDEN
+            message: Voce nao tem permissao para acessar este recurso.
+    NotFound:
+      description: Recurso nao encontrado.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: NOT_FOUND
+            message: Recurso nao encontrado.
+    ValidationError:
+      description: Erro de validacao nos dados enviados.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ValidationErrorResponse"
+          example:
+            code: VALIDATION_ERROR
+            message: Existem campos invalidos.
+            errors:
+              - field: email
+                message: Informe um e-mail valido.
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+          description: Nome completo do responsavel.
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: E-mail unico do responsavel.
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+          description: Senha de acesso do responsavel.
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        password:
+          type: string
+          format: password
+          minLength: 1
+          maxLength: 128
+    AuthUserResponse:
+      type: object
+      required:
+        - data
+        - message
+      properties:
+        data:
+          $ref: "#/components/schemas/User"
+        message:
+          type: string
+          example: Usuario cadastrado com sucesso.
+    AuthLoginResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - token
+            - user
+          properties:
+            token:
+              type: string
+              description: Token JWT para acesso aos endpoints protegidos.
+            tokenType:
+              type: string
+              example: Bearer
+            user:
+              $ref: "#/components/schemas/User"
+    User:
+      type: object
+      required:
+        - id
+        - name
+        - email
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Carla Lima
+        email:
+          type: string
+          format: email
+          example: carla@example.com
+    CreateChildRequest:
+      type: object
+      required:
+        - name
+        - birthDate
+        - weightKg
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+          description: Nome da crianca.
+        birthDate:
+          type: string
+          format: date
+          description: Data de nascimento. Nao pode ser futura.
+        weightKg:
+          type: number
+          format: float
+          minimum: 0.1
+          maximum: 300
+          description: Peso da crianca em quilogramas.
+    Child:
+      allOf:
+        - $ref: "#/components/schemas/CreateChildRequest"
+        - type: object
+          required:
+            - id
+            - createdAt
+            - updatedAt
+          properties:
+            id:
+              type: string
+              format: uuid
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+    ChildResponse:
+      type: object
+      required:
+        - data
+        - message
+      properties:
+        data:
+          $ref: "#/components/schemas/Child"
+        message:
+          type: string
+          example: Crianca cadastrada com sucesso.
+    ChildrenListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Child"
+        message:
+          type: string
+          nullable: true
+    CreateMedicationRequest:
+      type: object
+      required:
+        - name
+        - doseTime
+        - doseQuantity
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+          description: Nome do medicamento.
+        doseTime:
+          type: string
+          pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+          example: "08:00"
+          description: Horario da dose no formato HH:mm.
+        doseQuantity:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Quantidade de doses, em numero inteiro positivo.
+    Medication:
+      allOf:
+        - $ref: "#/components/schemas/CreateMedicationRequest"
+        - type: object
+          required:
+            - id
+            - childId
+            - createdAt
+            - updatedAt
+          properties:
+            id:
+              type: string
+              format: uuid
+            childId:
+              type: string
+              format: uuid
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+    MedicationResponse:
+      type: object
+      required:
+        - data
+        - message
+      properties:
+        data:
+          $ref: "#/components/schemas/Medication"
+        message:
+          type: string
+          example: Medicamento cadastrado com sucesso.
+    MedicationsListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Medication"
+        message:
+          type: string
+          nullable: true
+    CreateExamRequest:
+      type: object
+      required:
+        - type
+        - performedAt
+        - result
+      properties:
+        type:
+          type: string
+          minLength: 1
+          maxLength: 120
+          description: Tipo do exame.
+          example: Hemograma
+        performedAt:
+          type: string
+          format: date
+          description: Data de realizacao. Nao pode ser futura.
+        result:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          description: Resultado do exame.
+    Exam:
+      allOf:
+        - $ref: "#/components/schemas/CreateExamRequest"
+        - type: object
+          required:
+            - id
+            - childId
+            - createdAt
+            - updatedAt
+          properties:
+            id:
+              type: string
+              format: uuid
+            childId:
+              type: string
+              format: uuid
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+    ExamResponse:
+      type: object
+      required:
+        - data
+        - message
+      properties:
+        data:
+          $ref: "#/components/schemas/Exam"
+        message:
+          type: string
+          example: Exame cadastrado com sucesso.
+    ExamsListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Exam"
+        message:
+          type: string
+          nullable: true
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: BAD_REQUEST
+        message:
+          type: string
+          example: Requisicao invalida.
+    ValidationErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          required:
+            - errors
+          properties:
+            errors:
+              type: array
+              items:
+                type: object
+                required:
+                  - field
+                  - message
+                properties:
+                  field:
+                    type: string
+                    example: birthDate
+                  message:
+                    type: string
+                    example: A data de nascimento nao pode ser futura.
