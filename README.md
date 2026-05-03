@@ -96,7 +96,3 @@ curl http://localhost:3000/api/v1/children ^
 ## Banco em memoria
 
 Os dados sao mantidos apenas enquanto o processo Node.js esta em execucao. Ao reiniciar o servidor, usuarios, criancas, medicamentos e exames sao apagados.
-
-## Observacao sobre instrutores, alunos e progresso
-
-O arquivo `docs/swagger.yaml` presente neste projeto nao define entidades ou endpoints de instrutores, alunos, licoes ou progresso. Por isso, a implementacao segue rigorosamente o contrato VitaKids disponivel no Swagger: responsaveis, criancas, medicamentos e exames.
