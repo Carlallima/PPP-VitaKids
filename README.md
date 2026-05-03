@@ -7,13 +7,13 @@ API REST do MVP VitaKids implementada com Node.js, Express, JWT e banco de dados
 - Node.js 18 ou superior
 - npm
 
-## Instalar
+## Instalacao
 
 ```bash
 npm install
 ```
 
-## Rodar
+## Execucao
 
 ```bash
 npm start
